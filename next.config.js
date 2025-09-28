@@ -3,6 +3,10 @@ const nextConfig = {
   output: 'export',
   distDir: 'out',
   trailingSlash: true,
+  // Turbopack config for development only
+  turbopack: {
+    root: __dirname,
+  },
   allowedDevOrigins: ["*.preview.same-app.com"],
   images: {
     unoptimized: true,

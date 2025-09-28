@@ -14,12 +14,19 @@ import { Phone, Mail, MapPin, Clock, Shield, Sparkles, Heart, Star, CheckCircle,
 export default function Home() {
   const [callUsOpen, setCallUsOpen] = useState(false);
   const [formData, setFormData] = useState({
-    fullName: '',
+    name: '',
     email: '',
     phone: '',
+    postcode: '',
     service: '',
     preferredDate: '',
     message: ''
+  });
+  const [formErrors, setFormErrors] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    postcode: ''
   });
   const [formSubmitted, setFormSubmitted] = useState(false);
 
@@ -30,11 +37,65 @@ export default function Home() {
     }
   };
 
+  // Postcode validation - must be 4 numerical digits
+  const validatePostcode = (postcode: string): boolean => {
+    // Check if it's exactly 4 numerical digits
+    const postcodeRegex = /^\d{4}$/;
+    return postcodeRegex.test(postcode);
+  };
+
+  // Email validation
+  const validateEmail = (email: string): boolean => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+
+  // Phone validation (Australian format)
+  const validatePhone = (phone: string): boolean => {
+    const phoneRegex = /^(\+61|0)[2-9]\d{8}$|^04\d{8}$/;
+    return phoneRegex.test(phone.replace(/\s/g, ''));
+  };
+
+  // Name validation (simplified)
+  const validateName = (name: string): boolean => {
+    return name.trim().length >= 2;
+  };
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
       [name]: value
+    }));
+
+    // Real-time validation
+    let error = '';
+    switch (name) {
+      case 'name':
+        if (value && !validateName(value)) {
+          error = 'Please enter your name';
+        }
+        break;
+      case 'email':
+        if (value && !validateEmail(value)) {
+          error = 'Please enter a valid email address';
+        }
+        break;
+      case 'phone':
+        if (value && !validatePhone(value)) {
+          error = 'Please enter a valid Australian phone number';
+        }
+        break;
+      case 'postcode':
+        if (value && !validatePostcode(value)) {
+          error = 'Please enter a valid 4-digit postcode';
+        }
+        break;
+    }
+
+    setFormErrors(prev => ({
+      ...prev,
+      [name]: error
     }));
   };
 
@@ -47,25 +108,133 @@ export default function Home() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Comprehensive validation before submission
+    const errors = {
+      name: !validateName(formData.name) ? 'Please enter your name' : '',
+      email: !validateEmail(formData.email) ? 'Please enter a valid email address' : '',
+      phone: !validatePhone(formData.phone) ? 'Please enter a valid Australian phone number' : '',
+      postcode: !validatePostcode(formData.postcode) ? 'Please enter a valid 4-digit postcode' : ''
+    };
+
+    setFormErrors(errors);
+
+    // Check if there are any validation errors
+    const hasErrors = Object.values(errors).some(error => error !== '');
+    
+    if (hasErrors) {
+      alert('Please fix the errors in the form before submitting.');
+      return;
+    }
+
+    // Check required fields
+    if (!formData.name || !formData.email || !formData.phone || !formData.postcode || !formData.service) {
+      alert('Please fill in all required fields.');
+      return;
+    }
+
     console.log('Form submitted:', formData);
     // Here you would typically send the data to your backend
-    alert(`Thank you ${formData.fullName}! We'll get back to you within minutes with your quote.`);
+    alert(`Thank you ${formData.name}! We'll get back to you within minutes with your quote for postcode ${formData.postcode}.`);
     setFormSubmitted(true);
+    
     // Reset form after submission
     setFormData({
-      fullName: '',
+      name: '',
       email: '',
       phone: '',
+      postcode: '',
       service: '',
       preferredDate: '',
       message: ''
     });
+    setFormErrors({
+      name: '',
+      email: '',
+      phone: '',
+      postcode: ''
+    });
+  };
+
+  const scrollToSection = (sectionId: string) => {
+    const section = document.getElementById(sectionId);
+    if (section) {
+      section.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   return (
     <div className="min-h-screen bg-white">
+      {/* Floating Navigation */}
+      <nav className="fixed top-0 left-0 right-0 bg-white/95 backdrop-blur-sm border-b border-gray-200 z-50 shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            {/* Business Name Logo */}
+            <div className="flex items-center">
+              <div>
+                <h2 className="font-bold text-gray-900 text-2xl">Chaddy Cleaning</h2>
+                <p className="text-sm text-gray-500">Keeping ovens clean since 2019</p>
+              </div>
+            </div>
+
+            {/* Menu Items */}
+            <div className="hidden md:flex items-center space-x-8">
+              <button
+                onClick={scrollToTop}
+                className="text-gray-700 hover:text-red-600 font-semibold text-base transition-colors"
+              >
+                Home
+              </button>
+              <button
+                onClick={() => scrollToSection('services')}
+                className="text-gray-700 hover:text-red-600 font-semibold text-base transition-colors"
+              >
+                Services
+              </button>
+              <button
+                onClick={() => scrollToSection('faq')}
+                className="text-gray-700 hover:text-red-600 font-semibold text-base transition-colors"
+              >
+                FAQ
+              </button>
+              <button
+                onClick={() => scrollToSection('about')}
+                className="text-gray-700 hover:text-red-600 font-semibold text-base transition-colors"
+              >
+                About
+              </button>
+              <button
+                onClick={() => scrollToSection('quote-form')}
+                className="bg-red-600 hover:bg-red-700 text-white px-5 py-2 rounded-md font-semibold text-base transition-colors"
+              >
+                Get a Quote
+              </button>
+            </div>
+
+            {/* Phone Number */}
+            <div className="hidden lg:flex items-center space-x-2">
+              <Phone className="h-5 w-5 text-red-600" />
+              <span className="font-bold text-gray-900 text-base">1300 011 403</span>
+            </div>
+
+            {/* Mobile Menu Button */}
+            <button className="md:hidden p-2">
+              <div className="w-6 h-6 flex flex-col justify-center space-y-1">
+                <div className="w-full h-0.5 bg-gray-600"></div>
+                <div className="w-full h-0.5 bg-gray-600"></div>
+                <div className="w-full h-0.5 bg-gray-600"></div>
+              </div>
+            </button>
+          </div>
+        </div>
+      </nav>
+
       {/* Hero Section */}
-      <section className="relative bg-gradient-to-br from-gray-50 to-gray-100 overflow-hidden">
+      <section className="relative bg-gradient-to-br from-gray-50 to-gray-100 overflow-hidden pt-16">
         <div className="absolute inset-0 bg-black/5"></div>
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 lg:py-32">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
@@ -103,14 +272,14 @@ export default function Home() {
                         <Phone className="h-6 w-6 text-red-600" />
                         <div>
                           <p className="font-semibold">Phone</p>
-                          <p className="text-lg text-red-600">(03) 9568-2200</p>
+                          <p className="text-lg text-red-600">1300 011 403</p>
                         </div>
                       </div>
                       <div className="flex items-center space-x-3 p-4 bg-gray-50 rounded-lg">
                         <Mail className="h-6 w-6 text-red-600" />
                         <div>
                           <p className="font-semibold">Email</p>
-                          <p className="text-red-600">hello@chaddyoven.com.au</p>
+                          <p className="text-red-600">info@chaddycleaning.com.au</p>
                         </div>
                       </div>
                     </div>
@@ -286,8 +455,155 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Quote Form Section */}
+      <section id="quote-form" className="py-20 bg-gray-50">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-4">
+              Get Your Free Quote Today
+            </h2>
+            <p className="text-lg text-gray-600">
+              Fill out the form below and we'll get back to you in minutes with a detailed quote
+            </p>
+          </div>
+
+          <Card className="border-gray-200 shadow-xl">
+            <CardContent className="p-8">
+              <form className="space-y-6" onSubmit={handleSubmit}>
+                <div className="grid md:grid-cols-2 gap-6">
+                  <div>
+                    <Label htmlFor="name">Name *</Label>
+                    <Input
+                      id="name"
+                      name="name"
+                      type="text"
+                      placeholder="Your name"
+                      className={`mt-2 ${formErrors.name ? 'border-red-500' : ''}`}
+                      value={formData.name}
+                      onChange={handleInputChange}
+                      required
+                    />
+                    {formErrors.name && (
+                      <p className="text-red-500 text-sm mt-1">{formErrors.name}</p>
+                    )}
+                  </div>
+                  <div>
+                    <Label htmlFor="email">Email Address *</Label>
+                    <Input
+                      id="email"
+                      name="email"
+                      type="email"
+                      placeholder="your.email@example.com"
+                      className={`mt-2 ${formErrors.email ? 'border-red-500' : ''}`}
+                      value={formData.email}
+                      onChange={handleInputChange}
+                      required
+                    />
+                    {formErrors.email && (
+                      <p className="text-red-500 text-sm mt-1">{formErrors.email}</p>
+                    )}
+                  </div>
+                </div>
+
+                <div className="grid md:grid-cols-2 gap-6">
+                  <div>
+                    <Label htmlFor="phone">Phone Number *</Label>
+                    <Input
+                      id="phone"
+                      name="phone"
+                      type="tel"
+                      placeholder="(03) 9xxx xxxx"
+                      className={`mt-2 ${formErrors.phone ? 'border-red-500' : ''}`}
+                      value={formData.phone}
+                      onChange={handleInputChange}
+                      required
+                    />
+                    {formErrors.phone && (
+                      <p className="text-red-500 text-sm mt-1">{formErrors.phone}</p>
+                    )}
+                  </div>
+                  <div>
+                    <Label htmlFor="postcode">Postcode (Servicing Melbourne Only) *</Label>
+                    <Input
+                      id="postcode"
+                      name="postcode"
+                      type="text"
+                      placeholder="e.g. 3000"
+                      className={`mt-2 ${formErrors.postcode ? 'border-red-500' : ''}`}
+                      value={formData.postcode}
+                      onChange={handleInputChange}
+                      required
+                      maxLength={4}
+                    />
+                    {formErrors.postcode && (
+                      <p className="text-red-500 text-sm mt-1">{formErrors.postcode}</p>
+                    )}
+                    <p className="text-sm text-gray-500 mt-1">Servicing Melbourne only</p>
+                  </div>
+                </div>
+
+                <div className="grid md:grid-cols-1 gap-6">
+                  <div>
+                    <Label htmlFor="service">Service Needed *</Label>
+                    <select
+                      id="service"
+                      name="service"
+                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 mt-2"
+                      value={formData.service}
+                      onChange={(e) => handleSelectChange(e.target.value)}
+                      required
+                    >
+                      <option value="" disabled>Select a service</option>
+                      <option value="single-oven">Single Oven Cleaning</option>
+                      <option value="double-oven">Double Oven Deep Clean</option>
+                      <option value="commercial">Commercial Oven Cleaning</option>
+                      <option value="cooktop">Cooktop & Range Cleaning</option>
+                      <option value="move-out">Move-Out Cleaning</option>
+                      <option value="maintenance">Maintenance Package</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <Label htmlFor="preferredDate">Preferred Date</Label>
+                  <Input
+                    id="preferredDate"
+                    name="preferredDate"
+                    type="date"
+                    className="mt-2"
+                    value={formData.preferredDate}
+                    onChange={handleInputChange}
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="message">Additional Details</Label>
+                  <Textarea
+                    id="message"
+                    name="message"
+                    placeholder="Tell us about your oven's condition, special requirements, or any questions you have..."
+                    className="mt-2"
+                    rows={4}
+                    value={formData.message}
+                    onChange={handleInputChange}
+                  />
+                </div>
+
+                <Button
+                  type="submit"
+                  size="lg"
+                  className="w-full bg-red-600 hover:bg-red-700 text-white py-6 text-lg"
+                >
+                  Get My Free Quote
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
+        </div>
+      </section>
+
       {/* About Us Section */}
-      <section id="about" className="py-20 bg-gray-50">
+      <section id="about" className="py-20 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div>
@@ -426,122 +742,95 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Quote Form Section */}
-      <section id="quote-form" className="py-20 bg-gray-50">
+      {/* FAQ Section */}
+      <section id="faq" className="py-20 bg-gray-50">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
+          <div className="text-center mb-16">
             <h2 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-4">
-              Get Your Free Quote Today
+              Frequently Asked Questions
             </h2>
             <p className="text-lg text-gray-600">
-              Fill out the form below and we'll get back to you in minutes with a detailed quote
+              Everything you need to know about our professional oven cleaning services
             </p>
           </div>
 
-          <Card className="border-gray-200 shadow-xl">
-            <CardContent className="p-8">
-              <form className="space-y-6" onSubmit={handleSubmit}>
-                <div className="grid md:grid-cols-2 gap-6">
-                  <div>
-                    <Label htmlFor="fullName">Full Name *</Label>
-                    <Input
-                      id="fullName"
-                      name="fullName"
-                      type="text"
-                      placeholder="Your full name"
-                      className="mt-2"
-                      value={formData.fullName}
-                      onChange={handleInputChange}
-                      required
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="email">Email Address *</Label>
-                    <Input
-                      id="email"
-                      name="email"
-                      type="email"
-                      placeholder="your.email@example.com"
-                      className="mt-2"
-                      value={formData.email}
-                      onChange={handleInputChange}
-                      required
-                    />
-                  </div>
-                </div>
+          <div className="space-y-6">
+            <Card className="border-gray-200">
+              <CardContent className="p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-3">Are you insured?</h3>
+                <p className="text-gray-600">
+                  Yes, we have full business and public liability insurance. Our team is fully covered for all cleaning services, giving you complete peace of mind when we work in your home or business.
+                </p>
+              </CardContent>
+            </Card>
 
-                <div className="grid md:grid-cols-2 gap-6">
-                  <div>
-                    <Label htmlFor="phone">Phone Number *</Label>
-                    <Input
-                      id="phone"
-                      name="phone"
-                      type="tel"
-                      placeholder="(03) 9xxx xxxx"
-                      className="mt-2"
-                      value={formData.phone}
-                      onChange={handleInputChange}
-                      required
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="service">Service Needed *</Label>
-                    <select
-                      id="service"
-                      name="service"
-                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 mt-2"
-                      value={formData.service}
-                      onChange={(e) => handleSelectChange(e.target.value)}
-                      required
-                    >
-                      <option value="" disabled>Select a service</option>
-                      <option value="single-oven">Single Oven Cleaning - From $99</option>
-                      <option value="double-oven">Double Oven Deep Clean - From $129</option>
-                      <option value="commercial">Commercial Oven Cleaning - Quote on Request</option>
-                      <option value="cooktop">Cooktop & Range Cleaning - From $79</option>
-                      <option value="move-out">Move-Out Cleaning - From $149</option>
-                      <option value="maintenance">Maintenance Package - Save 15%</option>
-                    </select>
-                  </div>
-                </div>
+            <Card className="border-gray-200">
+              <CardContent className="p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-3">How long does oven cleaning take?</h3>
+                <p className="text-gray-600">
+                  Most standard oven cleaning services take 2-3 hours to complete. Double ovens or heavily soiled ovens may take a bit longer. We'll give you an accurate time estimate when booking your service.
+                </p>
+              </CardContent>
+            </Card>
 
-                <div>
-                  <Label htmlFor="preferredDate">Preferred Date</Label>
-                  <Input
-                    id="preferredDate"
-                    name="preferredDate"
-                    type="date"
-                    className="mt-2"
-                    value={formData.preferredDate}
-                    onChange={handleInputChange}
-                  />
-                </div>
+            <Card className="border-gray-200">
+              <CardContent className="p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-3">Do you use safe cleaning products?</h3>
+                <p className="text-gray-600">
+                  Absolutely! We use only eco-friendly, non-toxic cleaning solutions that are safe for your family and pets. Our products are biodegradable and won't leave harmful residues in your oven.
+                </p>
+              </CardContent>
+            </Card>
 
-                <div>
-                  <Label htmlFor="message">Additional Details</Label>
-                  <Textarea
-                    id="message"
-                    name="message"
-                    placeholder="Tell us about your oven's condition, special requirements, or any questions you have..."
-                    className="mt-2"
-                    rows={4}
-                    value={formData.message}
-                    onChange={handleInputChange}
-                  />
-                </div>
+            <Card className="border-gray-200">
+              <CardContent className="p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-3">What's included in your oven cleaning service?</h3>
+                <p className="text-gray-600">
+                  Our comprehensive service includes interior degreasing, rack and tray cleaning, door and glass polishing, external surface cleaning, and fan and filter cleaning (where applicable). We leave your oven spotless inside and out.
+                </p>
+              </CardContent>
+            </Card>
 
-                <Button
-                  type="submit"
-                  size="lg"
-                  className="w-full bg-red-600 hover:bg-red-700 text-white py-6 text-lg"
-                >
-                  Get My Free Quote
-                </Button>
-              </form>
-            </CardContent>
-          </Card>
+            <Card className="border-gray-200">
+              <CardContent className="p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-3">Do I need to be home during the cleaning?</h3>
+                <p className="text-gray-600">
+                  While it's not essential to be home throughout the entire process, we do recommend being available at the start and end of the service. This allows us to discuss any specific requirements and show you the results.
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="border-gray-200">
+              <CardContent className="p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-3">Can I use my oven immediately after cleaning?</h3>
+                <p className="text-gray-600">
+                  Yes! Once we've finished cleaning, your oven is ready to use immediately. Our eco-friendly products don't require lengthy ventilation periods, so you can start cooking right away.
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="border-gray-200">
+              <CardContent className="p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-3">What if I'm not satisfied with the results?</h3>
+                <p className="text-gray-600">
+                  We guarantee your satisfaction! If you're not completely happy with our cleaning service, we'll return and clean it again for free. Your satisfaction is our top priority.
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="border-gray-200">
+              <CardContent className="p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-3">Do you provide certificates for end of lease cleaning?</h3>
+                <p className="text-gray-600">
+                  Yes, we provide official cleaning certificates for end of lease or bond cleaning services. These are accepted by real estates and property managers to help ensure you get your full bond back.
+                </p>
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </section>
+
+
 
       {/* Footer */}
       <footer className="bg-gray-900 text-white py-16">
@@ -551,20 +840,20 @@ export default function Home() {
               <h3 className="text-2xl font-bold mb-4">Chaddy Oven Cleaning</h3>
               <p className="text-gray-400 mb-6 max-w-md">
                 Melbourne's trusted oven cleaning specialists. Professional, eco-friendly,
-                and guaranteed results for over 10 years.
+                and guaranteed results for over 5 years.
               </p>
               <div className="space-y-3">
                 <div className="flex items-center space-x-3">
                   <Phone className="h-5 w-5 text-red-500" />
-                  <span>(03) 9568-2200</span>
+                  <span>1300 011 403</span>
                 </div>
                 <div className="flex items-center space-x-3">
                   <Mail className="h-5 w-5 text-red-500" />
-                  <span>hello@chaddyoven.com.au</span>
+                  <span>info@chaddycleaning.com.au</span>
                 </div>
                 <div className="flex items-center space-x-3">
                   <MapPin className="h-5 w-5 text-red-500" />
-                  <span>Serving all Melbourne suburbs</span>
+                  <span>Melbourne CBD, North, East & South East</span>
                 </div>
               </div>
             </div>
@@ -584,12 +873,10 @@ export default function Home() {
             <div>
               <h4 className="text-lg font-semibold mb-4">Service Areas</h4>
               <ul className="space-y-2 text-gray-400">
-                <li>Chadstone & Surrounds</li>
-                <li>Malvern & Malvern East</li>
-                <li>Glen Waverley</li>
-                <li>Caulfield & Elsternwick</li>
-                <li>Brighton & Bentleigh</li>
-                <li>All Melbourne Suburbs</li>
+                <li>Melbourne CBD</li>
+                <li>Melbourne Northern Suburbs</li>
+                <li>Melbourne East</li>
+                <li>Melbourne South East</li>
               </ul>
             </div>
           </div>
