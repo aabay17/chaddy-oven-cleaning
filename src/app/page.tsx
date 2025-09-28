@@ -106,7 +106,7 @@ export default function Home() {
     }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     // Comprehensive validation before submission
@@ -133,21 +133,47 @@ export default function Home() {
       return;
     }
 
-    console.log('Form submitted:', formData);
-    // Here you would typically send the data to your backend
-    alert(`Thank you ${formData.name}! We'll get back to you within minutes with your quote for postcode ${formData.postcode}.`);
-    setFormSubmitted(true);
-    
-    // Reset form after submission
-    setFormData({
-      name: '',
-      email: '',
-      phone: '',
-      postcode: '',
-      service: '',
-      preferredDate: '',
-      message: ''
-    });
+    try {
+      // Prepare form data for Netlify
+      const netlifyFormData = {
+        'form-name': 'quote-form',
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone,
+        postcode: formData.postcode,
+        service: formData.service,
+        preferredDate: formData.preferredDate,
+        message: formData.message,
+      };
+
+      // Submit to Netlify
+      const response = await fetch('/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams(netlifyFormData).toString()
+      });
+
+      if (response.ok) {
+        alert(`Thank you ${formData.name}! We've received your quote request for postcode ${formData.postcode}. We'll get back to you within minutes!`);
+        setFormSubmitted(true);
+        
+        // Reset form after successful submission
+        setFormData({
+          name: '',
+          email: '',
+          phone: '',
+          postcode: '',
+          service: '',
+          preferredDate: '',
+          message: ''
+        });
+      } else {
+        throw new Error('Form submission failed');
+      }
+    } catch (error) {
+      console.error('Error submitting form:', error);
+      alert('There was an error submitting your form. Please try again or call us directly at 1300 011 403.');
+    }
     setFormErrors({
       name: '',
       email: '',
@@ -469,7 +495,16 @@ export default function Home() {
 
           <Card className="border-gray-200 shadow-xl">
             <CardContent className="p-8">
-              <form className="space-y-6" onSubmit={handleSubmit}>
+              <form 
+                className="space-y-6" 
+                onSubmit={handleSubmit}
+                name="quote-form"
+                method="POST"
+                data-netlify="true"
+              >
+                {/* Hidden input for Netlify form detection */}
+                <input type="hidden" name="form-name" value="quote-form" />
+                
                 <div className="grid md:grid-cols-2 gap-6">
                   <div>
                     <Label htmlFor="name">Name *</Label>
